@@ -1,0 +1,144 @@
+version: '3.8'
+name: mongo-sharding-repl
+
+services:
+  configsvr1:
+    image: mongo:latest
+    command: mongod --configsvr --replSet rs-config-server --port 27017
+    container_name: configsvr1
+    volumes:
+      - config1_data:/data/db
+    networks:
+      - mongo-cluster
+
+  configsvr2:
+    image: mongo:latest
+    command: mongod --configsvr --replSet rs-config-server --port 27017
+    container_name: configsvr2
+    volumes:
+      - config2_data:/data/db
+    networks:
+      - mongo-cluster
+
+  configsvr3:
+    image: mongo:latest
+    command: mongod --configsvr --replSet rs-config-server --port 27017
+    container_name: configsvr3
+    volumes:
+      - config3_data:/data/db
+    networks:
+      - mongo-cluster
+
+  shard1-1:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard1 --port 27018
+    container_name: shard1-1
+    volumes:
+      - shard1-1_data:/data/db
+    networks:
+      - mongo-cluster
+    depends_on:
+      - shard1-2
+      - shard1-3
+
+  shard1-2:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard1 --port 27018
+    container_name: shard1-2
+    volumes:
+      - shard1-2_data:/data/db
+    networks:
+      - mongo-cluster
+
+  shard1-3:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard1 --port 27018
+    container_name: shard1-3
+    volumes:
+      - shard1-3_data:/data/db
+    networks:
+      - mongo-cluster
+  
+
+  shard2-1:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard2 --port 27018
+    container_name: shard2-1
+    volumes:
+      - shard2-1_data:/data/db
+    networks:
+      - mongo-cluster
+    depends_on:
+      - shard2-2
+      - shard2-3
+  
+  shard2-2:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard2 --port 27018
+    container_name: shard2-2
+    volumes:
+      - shard2-2_data:/data/db
+    networks:
+      - mongo-cluster
+
+  shard2-3:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard2 --port 27018
+    container_name: shard2-3
+    volumes:
+      - shard2-3_data:/data/db
+    networks:
+      - mongo-cluster
+  
+  mongos:
+    image: mongo:latest
+    container_name: mongos
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_init/mongos-init.sh:/mongos-init.sh
+    entrypoint: ["bash", "-c", "/mongos-init.sh"]
+    depends_on:
+      - configsvr1
+      - configsvr2
+      - configsvr3
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
+    networks:
+      - mongo-cluster
+
+
+  pymongo_api:
+    container_name: pymongo_api
+    build: 
+      context: api_app
+      dockerfile: Dockerfile
+    image: kazhem/pymongo_api:1.0.0
+    depends_on:
+      - mongos
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: "mongodb://mongos"
+      MONGODB_DATABASE_NAME: "somedb"
+    
+    networks:
+      - mongo-cluster
+
+volumes:
+  config1_data:
+  config2_data:
+  config3_data:
+  shard1-1_data:
+  shard1-2_data:
+  shard1-3_data:
+  shard2-1_data:
+  shard2-2_data:
+  shard2-3_data:
+
+networks:
+  mongo-cluster:
