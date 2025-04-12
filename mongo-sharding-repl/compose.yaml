@@ -1,5 +1,5 @@
 version: '3.8'
-name: mongo-sharding
+name: mongo-sharding-repl
 
 services:
   configsvr1:
@@ -29,24 +29,67 @@ services:
     networks:
       - mongo-cluster
 
-  shard1:
+  shard1-1:
     image: mongo:latest
     command: mongod --shardsvr --replSet rs-shard1 --port 27018
-    container_name: shard1
+    container_name: shard1-1
     volumes:
-      - shard1_data:/data/db
+      - shard1-1_data:/data/db
+    networks:
+      - mongo-cluster
+    depends_on:
+      - shard1-2
+      - shard1-3
+
+  shard1-2:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard1 --port 27018
+    container_name: shard1-2
+    volumes:
+      - shard1-2_data:/data/db
     networks:
       - mongo-cluster
 
-  shard2:
+  shard1-3:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard1 --port 27018
+    container_name: shard1-3
+    volumes:
+      - shard1-3_data:/data/db
+    networks:
+      - mongo-cluster
+  
+
+  shard2-1:
     image: mongo:latest
     command: mongod --shardsvr --replSet rs-shard2 --port 27018
-    container_name: shard2
+    container_name: shard2-1
     volumes:
-      - shard2_data:/data/db
+      - shard2-1_data:/data/db
+    networks:
+      - mongo-cluster
+    depends_on:
+      - shard2-2
+      - shard2-3
+  
+  shard2-2:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard2 --port 27018
+    container_name: shard2-2
+    volumes:
+      - shard2-2_data:/data/db
     networks:
       - mongo-cluster
 
+  shard2-3:
+    image: mongo:latest
+    command: mongod --shardsvr --replSet rs-shard2 --port 27018
+    container_name: shard2-3
+    volumes:
+      - shard2-3_data:/data/db
+    networks:
+      - mongo-cluster
+  
   mongos:
     image: mongo:latest
     container_name: mongos
@@ -59,8 +102,12 @@ services:
       - configsvr1
       - configsvr2
       - configsvr3
-      - shard1
-      - shard2
+      - shard1-1
+      - shard1-2
+      - shard1-3
+      - shard2-1
+      - shard2-2
+      - shard2-3
     networks:
       - mongo-cluster
 
@@ -86,8 +133,12 @@ volumes:
   config1_data:
   config2_data:
   config3_data:
-  shard1_data:
-  shard2_data:
+  shard1-1_data:
+  shard1-2_data:
+  shard1-3_data:
+  shard2-1_data:
+  shard2-2_data:
+  shard2-3_data:
 
 networks:
   mongo-cluster:
