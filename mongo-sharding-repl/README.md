@@ -2,6 +2,12 @@
 
 ## Как запустить
 
+Собираем образ
+
+```shell
+docker compose build
+```
+
 Запускаем mongodb и приложение
 
 ```shell
